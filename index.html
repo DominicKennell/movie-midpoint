@@ -1,9 +1,197 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Movie Midpoint App</title>
+<style>
+
+body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; color: #222;}
+input, select, button { margin: relative 0; padding: 6px; }
+.movie-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 20px; }
+.movie { width: 150px; border: 1px solid #ccc; border-radius: 6px; padding: 6px; background: #fff; }
+.movie img { width: 100%; border-radius: 4px; }
+.score { font-weight: bold; margin-top: 4px; }
+
+</style>
+</head>
 <body>
+<h1>🎬 Movie Midpoint App</h1>
+<p>Powered by TMDb</p>
 
-<h1>My First Heading</h1>
-<p>My first paragraph.</p>
+<label>Input type:</label>
+<select id="inputType">
+    <option value="genre">Genre</option>
+    <option value="movie">Movie</option>
+</select>
+<br>
+<br>
 
+<div id="usersContainer">
+    <div>User 1: <input type="text" placeholder="comma-separated genres or movies" style="width: 250px;"></div>
+    <br>
+    <div>User 2: <input type="text" placeholder="comma-separated genres or movies" style="width: 250px;"></div>
+</div>
+<br>
+<button onclick="addUser()">Add User</button>
+<br>
+<br>
+<button onclick="computeCompromise()">Get Compromise</button>
+
+<div class="movie-grid" id="results"></div>
+
+<script>
+const TMDB_KEY = "939585bf35fd2c9bc972468f88bf1d01"; // <-- Replace with your TMDb API key
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const IMAGE_BASE = 'https://image.tmdb.org/t/p/w185';
+
+let movieLibrary = [];
+
+// -------------------- Fetch TMDb movies --------------------
+async function fetchMovieLibrary(num=4000, minVotes=4000) {
+    let movies = [];
+    let page = 1;
+    while (movies.length < num && page <= 50) {
+        const url = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&page=${page}&vote_count.gte=${minVotes}&include_adult=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+        for (const m of data.results) {
+            movies.push({
+                id: m.id,
+                title: m.title,
+                poster: m.poster_path ? IMAGE_BASE + m.poster_path : null,
+                genres: []
+            });
+            if (movies.length >= num) break;
+        }
+        page++;
+    }
+    // fetch genres
+    for (const m of movies) {
+        const res = await fetch(`${TMDB_BASE}/movie/${m.id}?api_key=${TMDB_KEY}&language=en-US`);
+        const data = await res.json();
+        m.genres = data.genres.map(g => g.name);
+    }
+    movieLibrary = movies;
+}
+fetchMovieLibrary();
+
+// -------------------- Compromise Algorithm --------------------
+function cosineSim(a, b){
+    let dot=0, normA=0, normB=0;
+    for(let i=0;i<a.length;i++){ dot+=a[i]*b[i]; normA+=a[i]*a[i]; normB+=b[i]*b[i]; }
+    if(normA===0||normB===0) return 0;
+    return dot/Math.sqrt(normA*normB);
+}
+
+function buildGenreIndex(movies){
+    const genres = new Set();
+    movies.forEach(m=>m.genres.forEach(g=>genres.add(g)));
+    const list = Array.from(genres).sort();
+    const index = {}; list.forEach((g,i)=>index[g]=i);
+    return {list,index};
+}
+
+function movieVector(movie,index){
+    const vec = Array(Object.keys(index).length).fill(0);
+    movie.genres.forEach(g=>{ if(index[g]!=undefined) vec[index[g]]=1; });
+    return normalizeVec(vec);
+}
+
+function userVector(userInput,type,index){
+    const vec = Array(Object.keys(index).length).fill(0);
+    const tokens = userInput.map(x=>x.trim());
+    if(type==='genre'){
+        tokens.forEach(t=>{
+            if(index[t]!=undefined) vec[index[t]]=1;
+            else{
+                const closest = Object.keys(index).reduce((best,g)=>{
+                    const sim = stringSim(t,g);
+                    return sim>best.sim?{sim:sim,genre:g}:best;
+                }, {sim:0,genre:null});
+                if(closest.sim>0.6) vec[index[closest.genre]]=1;
+            }
+        });
+    } else { // movie input
+        tokens.forEach(t=>{
+            let found = movieLibrary.find(m=>m.title.toLowerCase()===t.toLowerCase());
+            if(!found){
+                // fuzzy match
+                let bestSim=0, best=null;
+                movieLibrary.forEach(m=>{
+                    const sim = stringSim(m.title,t);
+                    if(sim>bestSim){ bestSim=sim; best=m; }
+                });
+                if(bestSim>=0.6) found=best;
+            }
+            if(found) found.genres.forEach(g=>{ if(index[g]!=undefined) vec[index[g]]=1; });
+        });
+    }
+    return normalizeVec(vec);
+}
+
+function normalizeVec(v){
+    const norm = Math.sqrt(v.reduce((a,b)=>a+b*b,0));
+    if(norm===0) return v;
+    return v.map(x=>x/norm);
+}
+
+// simple string similarity (0 to 1)
+function stringSim(a,b){
+    a=a.toLowerCase(); b=b.toLowerCase();
+    let matches=0;
+    const minLen = Math.min(a.length,b.length);
+    for(let i=0;i<minLen;i++) if(a[i]===b[i]) matches++;
+    return matches/minLen;
+}
+
+// -------------------- Fetch providers --------------------
+async function fetchProviders(movieId){
+    const res = await fetch(`${TMDB_BASE}/movie/${movieId}/watch/providers?api_key=${TMDB_KEY}`);
+    const data = await res.json();
+    if(data.results && data.results.US && data.results.US.flatrate)
+        return data.results.US.flatrate.map(p=>p.provider_name);
+    return [];
+}
+
+// -------------------- UI Handlers --------------------
+function addUser(){
+    const div = document.createElement('div');
+    div.innerHTML = `User ${document.querySelectorAll('#usersContainer div').length+50}: <input type="text" placeholder="comma-separated genres or movies">`;
+    document.getElementById('usersContainer').appendChild(div);
+}
+
+async function computeCompromise(){
+    if(movieLibrary.length===0){ alert("Movie library not loaded yet."); return; }
+    const type = document.getElementById('inputType').value;
+    const inputs = Array.from(document.querySelectorAll('#usersContainer input')).map(i=>i.value.split(','));
+    const {list,index} = buildGenreIndex(movieLibrary);
+    const userVecs = inputs.map(ui=>userVector(ui,type,index));
+
+    const scored = movieLibrary.map(m=>{
+        const mvec = movieVector(m,index);
+        const sims = userVecs.map(uvec=>cosineSim(mvec,uvec));
+        let avg = sims.reduce((a,b)=>a+b,0)/sims.length;
+        // small fairness bonus if movie touches all users
+        if(sims.every(s=>s>0)) avg += 0.05;
+        return {...m,score:avg,per_user_scores:sims};
+    });
+
+    scored.sort((a,b)=>b.score-a.score);
+    const top = scored.slice(0,10);
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML='';
+    for(const m of top){
+        const provs = await fetchProviders(m.id);
+        const div = document.createElement('div');
+        div.className='movie';
+        div.innerHTML=`<strong>${m.title}</strong><br>
+        ${m.poster?'<img src="'+m.poster+'">':''}
+        Score: ${m.score.toFixed(3)}<br>
+        Providers: ${provs.join(', ') || 'None'}<br>
+        Per-user: ${m.per_user_scores.map(s=>s.toFixed(2)).join(', ')}`;
+        resultsDiv.appendChild(div);
+    }
+}
+</script>
 </body>
 </html>
