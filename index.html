@@ -2,196 +2,954 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Movie Midpoint</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Compromise App</title>
 <style>
+* { box-sizing: border-box; }
 
-body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; color: #222;}
-input, select, button { margin: relative 0; padding: 6px; }
-.movie-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 20px; }
-.movie { width: 150px; border: 1px solid #ccc; border-radius: 6px; padding: 6px; background: #fff; }
-.movie img { width: 100%; border-radius: 4px; }
-.score { font-weight: bold; margin-top: 4px; }
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #222;
+}
 
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+h1 {
+    text-align: center;
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 2.5em;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+    flex-direction: column;
+    color: white;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.control-panel {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+input, select, button {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+input, select {
+    width: 100%;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.user-input {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.user-label {
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.remove-user {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.remove-user:hover {
+    background: #cc0000;
+}
+
+button {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #5568d3;
+}
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.carousel-container {
+    position: relative;
+    margin-top: 30px;
+}
+
+.carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.carousel-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+}
+
+.carousel-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.movie-counter {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.carousel-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.carousel-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    padding: 0;
+}
+
+.carousel-btn:hover:not(:disabled) {
+    background: #5568d3;
+    transform: scale(1.1);
+}
+
+.carousel-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.carousel-wrapper {
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.carousel-track {
+    display: flex;
+    gap: 20px;
+    transition: transform 0.5s ease-in-out;
+    padding: 10px 0;
+}
+
+.movie {
+    min-width: 280px;
+    max-width: 280px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 0;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.movie:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+.movie-poster-container {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    overflow: hidden;
+    background: #000;
+}
+
+.movie-rank {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    z-index: 2;
+}
+
+.movie-content {
+    padding: 15px;
+}
+
+.movie img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.movie-no-poster {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    padding: 20px;
+}
+
+.movie-title {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 16px;
+    line-height: 1.3;
+    height: 42px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.movie-score {
+    background: #667eea;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.movie-genres {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.movie-providers {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.per-user-scores {
+    font-size: 11px;
+    color: #555;
+    background: #f0f0f0;
+    padding: 6px;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 18px;
+}
+
+.info-banner {
+    background: #e3f2fd;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2196f3;
+    color: #1565c0;
+    font-size: 14px;
+}
+
+.provider-filter {
+    margin-top: 15px;
+}
+
+.provider-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.provider-tag {
+    background: #e8eaf6;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.provider-tag:hover {
+    background: #c5cae9;
+}
+
+.provider-tag.selected {
+    background: #667eea;
+    color: white;
+    border-color: #5568d3;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px 15px;
+    }
+    
+    h1 {
+        font-size: 1.8em;
+    }
+    
+    .movie {
+        min-width: 220px;
+        max-width: 220px;
+    }
+    
+    .movie-poster-container {
+        height: 330px;
+    }
+    
+    .carousel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .carousel-info {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .carousel-title {
+        font-size: 18px;
+    }
+    
+    .movie-counter {
+        font-size: 12px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .movie {
+        min-width: 180px;
+        max-width: 180px;
+    }
+    
+    .movie-poster-container {
+        height: 270px;
+    }
+    
+    .carousel-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+    }
+}
 </style>
 </head>
 <body>
-<h1>🎬 Movie Midpoint</h1>
-<p>Powered by TMDb</p>
 
-<label>Input type:</label>
-<select id="inputType">
-    <option value="genre">Genre</option>
-    <option value="movie">Movie</option>
-</select>
-<br>
-<br>
-
-<div id="usersContainer">
-    <div>User 1: <input type="text" placeholder="comma-separated genres or movies" style="width: 250px;"></div>
-    <br>
-    <div>User 2: <input type="text" placeholder="comma-separated genres or movies" style="width: 250px;"></div>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div id="loadingText">Loading movie library...</div>
 </div>
-<br>
-<button onclick="addUser()">Add User</button>
-<br>
-<br>
-<button onclick="computeCompromise()">Get Compromise</button>
 
-<div class="movie-grid" id="results"></div>
+<div class="container">
+    <h1>🎬 Movie Compromise App</h1>
+    <p class="subtitle">Find the perfect movie everyone will enjoy • Powered by TMDb</p>
+
+    <div class="info-banner" id="libraryStatus">
+        Loading movie library... This may take a moment.
+    </div>
+
+    <div class="control-panel">
+        <div class="form-group">
+            <label for="inputType">What are you inputting?</label>
+            <select id="inputType">
+                <option value="genre">Genres (e.g., Action, Comedy, Drama)</option>
+                <option value="movie">Movie Titles (e.g., Inception, The Matrix)</option>
+            </select>
+        </div>
+
+        <div id="usersContainer">
+            <div class="user-input">
+                <label class="user-label">👤 User 1</label>
+                <input type="text" placeholder="Enter comma-separated genres or movies">
+            </div>
+            <div class="user-input">
+                <label class="user-label">👤 User 2</label>
+                <input type="text" placeholder="Enter comma-separated genres or movies">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="addUser()">➕ Add Another User</button>
+            <button onclick="computeCompromise()" id="computeBtn" disabled>🎯 Find Compromise Movies</button>
+        </div>
+
+        <div class="provider-filter">
+            <label>Filter by Streaming Service (optional):</label>
+            <div class="provider-tags" id="providerTags">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <div class="carousel-container" id="carouselContainer" style="display: none;">
+        <div class="carousel-header">
+            <div class="carousel-title">🎬 Your Compromise Movies</div>
+            <div class="carousel-info">
+                <div class="movie-counter" id="movieCounter"></div>
+                <div class="carousel-controls">
+                    <button class="carousel-btn" id="prevBtn" onclick="scrollCarousel(-1)">‹</button>
+                    <button class="carousel-btn" id="nextBtn" onclick="scrollCarousel(1)">›</button>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-wrapper">
+            <div class="carousel-track" id="carouselTrack"></div>
+        </div>
+    </div>
+
+    <div class="no-results" id="noResults" style="display: none;"></div>
+</div>
 
 <script>
-const TMDB_KEY = "939585bf35fd2c9bc972468f88bf1d01"; // <-- Replace with your TMDb API key
+const TMDB_KEY = "939585bf35fd2c9bc972468f88bf1d01";
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w185';
 
 let movieLibrary = [];
+let userCount = 2;
+let selectedProviders = new Set();
+let allProviders = new Set();
+let currentCarouselIndex = 0;
+let filteredMovies = [];
+let allComputedMovies = []; // Store original computed movies
+let moviesPerView = 4;
 
-// -------------------- Fetch TMDb movies --------------------
-async function fetchMovieLibrary(num=4000, minVotes=4000) {
-    let movies = [];
-    let page = 1;
-    while (movies.length < num && page <= 50) {
-        const url = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&page=${page}&vote_count.gte=${minVotes}&include_adult=false`;
-        const res = await fetch(url);
-        const data = await res.json();
-        for (const m of data.results) {
-            movies.push({
-                id: m.id,
-                title: m.title,
-                poster: m.poster_path ? IMAGE_BASE + m.poster_path : null,
-                genres: []
-            });
-            if (movies.length >= num) break;
-        }
-        page++;
-    }
-    // fetch genres
-    for (const m of movies) {
-        const res = await fetch(`${TMDB_BASE}/movie/${m.id}?api_key=${TMDB_KEY}&language=en-US`);
-        const data = await res.json();
-        m.genres = data.genres.map(g => g.name);
-    }
-    movieLibrary = movies;
+// Calculate movies per view based on screen width
+function updateMoviesPerView() {
+    const width = window.innerWidth;
+    if (width < 600) moviesPerView = 1;
+    else if (width < 900) moviesPerView = 2;
+    else if (width < 1200) moviesPerView = 3;
+    else moviesPerView = 4;
 }
+
+window.addEventListener('resize', () => {
+    updateMoviesPerView();
+    updateCarousel();
+});
+
+updateMoviesPerView();
+
+// Touch support for mobile swiping
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const wrapper = document.getElementById('carouselContainer');
+    if (wrapper) {
+        wrapper.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+
+        wrapper.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
+    }
+});
+
+function handleSwipe() {
+    const swipeThreshold = 50;
+    if (touchEndX < touchStartX - swipeThreshold) {
+        // Swipe left - next
+        scrollCarousel(1);
+    }
+    if (touchEndX > touchStartX + swipeThreshold) {
+        // Swipe right - previous
+        scrollCarousel(-1);
+    }
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    if (filteredMovies.length > 0) {
+        if (e.key === 'ArrowLeft') {
+            scrollCarousel(-1);
+        } else if (e.key === 'ArrowRight') {
+            scrollCarousel(1);
+        }
+    }
+});
+
+// -------------------- Fetch TMDb movies (optimized) --------------------
+async function fetchMovieLibrary(numMovies = 4000, minVotes = 500) {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    
+    try {
+        // First, fetch the genre list
+        const genreRes = await fetch(`${TMDB_BASE}/genre/movie/list?api_key=${TMDB_KEY}&language=en-US`);
+        const genreData = await genreRes.json();
+        const genreMap = {};
+        genreData.genres.forEach(g => genreMap[g.id] = g.name);
+        
+        let movies = [];
+        let page = 1;
+        const maxPages = 50;
+        
+        while (movies.length < numMovies && page <= maxPages) {
+            loadingText.textContent = `Loading movies... ${movies.length} / ${numMovies}`;
+            
+            const url = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&page=${page}&vote_count.gte=${minVotes}&include_adult=false`;
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            for (const m of data.results) {
+                movies.push({
+                    id: m.id,
+                    title: m.title,
+                    poster: m.poster_path ? IMAGE_BASE + m.poster_path : null,
+                    genres: m.genre_ids.map(id => genreMap[id]).filter(Boolean)
+                });
+                if (movies.length >= numMovies) break;
+            }
+            page++;
+            
+            // Small delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        movieLibrary = movies;
+        
+        loadingOverlay.style.display = 'none';
+        document.getElementById('libraryStatus').innerHTML = `✅ <strong>${movieLibrary.length} movies loaded!</strong> Ready to find your perfect compromise.`;
+        document.getElementById('computeBtn').disabled = false;
+        
+    } catch (error) {
+        loadingOverlay.style.display = 'none';
+        document.getElementById('libraryStatus').innerHTML = `❌ Error loading movies. Please refresh the page.`;
+        console.error('Error loading movie library:', error);
+    }
+}
+
+// Start loading immediately
 fetchMovieLibrary();
 
 // -------------------- Compromise Algorithm --------------------
-function cosineSim(a, b){
-    let dot=0, normA=0, normB=0;
-    for(let i=0;i<a.length;i++){ dot+=a[i]*b[i]; normA+=a[i]*a[i]; normB+=b[i]*b[i]; }
-    if(normA===0||normB===0) return 0;
-    return dot/Math.sqrt(normA*normB);
+function cosineSim(a, b) {
+    let dot = 0, normA = 0, normB = 0;
+    for (let i = 0; i < a.length; i++) {
+        dot += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+    }
+    if (normA === 0 || normB === 0) return 0;
+    return dot / Math.sqrt(normA * normB);
 }
 
-function buildGenreIndex(movies){
+function buildGenreIndex(movies) {
     const genres = new Set();
-    movies.forEach(m=>m.genres.forEach(g=>genres.add(g)));
+    movies.forEach(m => m.genres.forEach(g => genres.add(g)));
     const list = Array.from(genres).sort();
-    const index = {}; list.forEach((g,i)=>index[g]=i);
-    return {list,index};
+    const index = {};
+    list.forEach((g, i) => index[g] = i);
+    return { list, index };
 }
 
-function movieVector(movie,index){
+function movieVector(movie, index) {
     const vec = Array(Object.keys(index).length).fill(0);
-    movie.genres.forEach(g=>{ if(index[g]!=undefined) vec[index[g]]=1; });
+    movie.genres.forEach(g => {
+        if (index[g] !== undefined) vec[index[g]] = 1;
+    });
     return normalizeVec(vec);
 }
 
-function userVector(userInput,type,index){
+function userVector(userInput, type, index) {
     const vec = Array(Object.keys(index).length).fill(0);
-    const tokens = userInput.map(x=>x.trim());
-    if(type==='genre'){
-        tokens.forEach(t=>{
-            if(index[t]!=undefined) vec[index[t]]=1;
-            else{
-                const closest = Object.keys(index).reduce((best,g)=>{
-                    const sim = stringSim(t,g);
-                    return sim>best.sim?{sim:sim,genre:g}:best;
-                }, {sim:0,genre:null});
-                if(closest.sim>0.6) vec[index[closest.genre]]=1;
+    const tokens = userInput.map(x => x.trim()).filter(x => x);
+    
+    if (type === 'genre') {
+        tokens.forEach(t => {
+            if (index[t] !== undefined) {
+                vec[index[t]] = 1;
+            } else {
+                // Fuzzy match for genre
+                const closest = Object.keys(index).reduce((best, g) => {
+                    const sim = stringSim(t, g);
+                    return sim > best.sim ? { sim: sim, genre: g } : best;
+                }, { sim: 0, genre: null });
+                if (closest.sim > 0.6) vec[index[closest.genre]] = 1;
             }
         });
-    } else { // movie input
-        tokens.forEach(t=>{
-            let found = movieLibrary.find(m=>m.title.toLowerCase()===t.toLowerCase());
-            if(!found){
-                // fuzzy match
-                let bestSim=0, best=null;
-                movieLibrary.forEach(m=>{
-                    const sim = stringSim(m.title,t);
-                    if(sim>bestSim){ bestSim=sim; best=m; }
+    } else {
+        // Movie input
+        tokens.forEach(t => {
+            let found = movieLibrary.find(m => m.title.toLowerCase() === t.toLowerCase());
+            if (!found) {
+                // Fuzzy match
+                let bestSim = 0, best = null;
+                movieLibrary.forEach(m => {
+                    const sim = stringSim(m.title, t);
+                    if (sim > bestSim) {
+                        bestSim = sim;
+                        best = m;
+                    }
                 });
-                if(bestSim>=0.6) found=best;
+                if (bestSim >= 0.6) found = best;
             }
-            if(found) found.genres.forEach(g=>{ if(index[g]!=undefined) vec[index[g]]=1; });
+            if (found) {
+                found.genres.forEach(g => {
+                    if (index[g] !== undefined) vec[index[g]] = 1;
+                });
+            }
         });
     }
     return normalizeVec(vec);
 }
 
-function normalizeVec(v){
-    const norm = Math.sqrt(v.reduce((a,b)=>a+b*b,0));
-    if(norm===0) return v;
-    return v.map(x=>x/norm);
+function normalizeVec(v) {
+    const norm = Math.sqrt(v.reduce((a, b) => a + b * b, 0));
+    if (norm === 0) return v;
+    return v.map(x => x / norm);
 }
 
-// simple string similarity (0 to 1)
-function stringSim(a,b){
-    a=a.toLowerCase(); b=b.toLowerCase();
-    let matches=0;
-    const minLen = Math.min(a.length,b.length);
-    for(let i=0;i<minLen;i++) if(a[i]===b[i]) matches++;
-    return matches/minLen;
+function stringSim(a, b) {
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+    let matches = 0;
+    const minLen = Math.min(a.length, b.length);
+    for (let i = 0; i < minLen; i++) {
+        if (a[i] === b[i]) matches++;
+    }
+    return matches / Math.max(a.length, b.length);
 }
 
 // -------------------- Fetch providers --------------------
-async function fetchProviders(movieId){
-    const res = await fetch(`${TMDB_BASE}/movie/${movieId}/watch/providers?api_key=${TMDB_KEY}`);
-    const data = await res.json();
-    if(data.results && data.results.US && data.results.US.flatrate)
-        return data.results.US.flatrate.map(p=>p.provider_name);
-    return [];
+async function fetchProviders(movieId) {
+    try {
+        const res = await fetch(`${TMDB_BASE}/movie/${movieId}/watch/providers?api_key=${TMDB_KEY}`);
+        const data = await res.json();
+        if (data.results && data.results.US && data.results.US.flatrate) {
+            const providers = data.results.US.flatrate.map(p => p.provider_name);
+            providers.forEach(p => allProviders.add(p));
+            return providers;
+        }
+        return [];
+    } catch (error) {
+        return [];
+    }
 }
 
 // -------------------- UI Handlers --------------------
-function addUser(){
+function addUser() {
+    userCount++;
     const div = document.createElement('div');
-    div.innerHTML = `User ${document.querySelectorAll('#usersContainer div').length+50}: <input type="text" placeholder="comma-separated genres or movies">`;
+    div.className = 'user-input';
+    div.innerHTML = `
+        <label class="user-label">👤 User ${userCount}</label>
+        <input type="text" placeholder="Enter comma-separated genres or movies">
+        <button class="remove-user" onclick="removeUser(this)">Remove</button>
+    `;
     document.getElementById('usersContainer').appendChild(div);
 }
 
-async function computeCompromise(){
-    if(movieLibrary.length===0){ alert("Movie library not loaded yet."); return; }
-    const type = document.getElementById('inputType').value;
-    const inputs = Array.from(document.querySelectorAll('#usersContainer input')).map(i=>i.value.split(','));
-    const {list,index} = buildGenreIndex(movieLibrary);
-    const userVecs = inputs.map(ui=>userVector(ui,type,index));
-
-    const scored = movieLibrary.map(m=>{
-        const mvec = movieVector(m,index);
-        const sims = userVecs.map(uvec=>cosineSim(mvec,uvec));
-        let avg = sims.reduce((a,b)=>a+b,0)/sims.length;
-        // small fairness bonus if movie touches all users
-        if(sims.every(s=>s>0)) avg += 0.05;
-        return {...m,score:avg,per_user_scores:sims};
-    });
-
-    scored.sort((a,b)=>b.score-a.score);
-    const top = scored.slice(0,10);
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML='';
-    for(const m of top){
-        const provs = await fetchProviders(m.id);
-        const div = document.createElement('div');
-        div.className='movie';
-        div.innerHTML=`<strong>${m.title}</strong><br>
-        ${m.poster?'<img src="'+m.poster+'">':''}
-        Score: ${m.score.toFixed(3)}<br>
-        Providers: ${provs.join(', ') || 'None'}<br>
-        Per-user: ${m.per_user_scores.map(s=>s.toFixed(2)).join(', ')}`;
-        resultsDiv.appendChild(div);
+function removeUser(btn) {
+    if (document.querySelectorAll('#usersContainer .user-input').length > 2) {
+        btn.parentElement.remove();
+        // Renumber users
+        const users = document.querySelectorAll('#usersContainer .user-label');
+        users.forEach((label, index) => {
+            label.textContent = `👤 User ${index + 1}`;
+        });
+        userCount = users.length;
+    } else {
+        alert('You need at least 2 users to find a compromise!');
     }
 }
+
+function updateProviderFilter() {
+    const container = document.getElementById('providerTags');
+    container.innerHTML = '';
+    
+    const sortedProviders = Array.from(allProviders).sort();
+    sortedProviders.forEach(provider => {
+        const tag = document.createElement('div');
+        tag.className = 'provider-tag';
+        if (selectedProviders.has(provider)) {
+            tag.classList.add('selected');
+        }
+        tag.textContent = provider;
+        tag.onclick = () => {
+            if (selectedProviders.has(provider)) {
+                selectedProviders.delete(provider);
+                tag.classList.remove('selected');
+            } else {
+                selectedProviders.add(provider);
+                tag.classList.add('selected');
+            }
+            // Re-filter and display movies when provider selection changes
+            filterAndDisplayMovies();
+        };
+        container.appendChild(tag);
+    });
+}
+
+function scrollCarousel(direction) {
+    currentCarouselIndex += direction;
+    
+    // Ensure we don't go out of bounds
+    const maxIndex = Math.max(0, filteredMovies.length - moviesPerView);
+    currentCarouselIndex = Math.max(0, Math.min(currentCarouselIndex, maxIndex));
+    
+    updateCarousel();
+}
+
+function updateCarousel() {
+    const track = document.getElementById('carouselTrack');
+    const offset = currentCarouselIndex * (300); // 280px width + 20px gap
+    track.style.transform = `translateX(-${offset}px)`;
+    
+    // Update button states
+    document.getElementById('prevBtn').disabled = currentCarouselIndex === 0;
+    document.getElementById('nextBtn').disabled = currentCarouselIndex >= filteredMovies.length - moviesPerView;
+    
+    // Update counter
+    const counter = document.getElementById('movieCounter');
+    const startNum = currentCarouselIndex + 1;
+    const endNum = Math.min(currentCarouselIndex + moviesPerView, filteredMovies.length);
+    counter.textContent = `Showing ${startNum}-${endNum} of ${filteredMovies.length}`;
+}
+
+function filterAndDisplayMovies() {
+    const carouselContainer = document.getElementById('carouselContainer');
+    const noResults = document.getElementById('noResults');
+    const track = document.getElementById('carouselTrack');
+    
+    // Start with all computed movies
+    filteredMovies = [...allComputedMovies];
+    
+    // Filter movies by selected providers if any are selected
+    if (selectedProviders.size > 0) {
+        filteredMovies = filteredMovies.filter(m => 
+            m.providers && m.providers.some(p => selectedProviders.has(p))
+        );
+    }
+    
+    // Reset carousel position
+    currentCarouselIndex = 0;
+    
+    if (filteredMovies.length === 0) {
+        carouselContainer.style.display = 'none';
+        noResults.style.display = 'block';
+        noResults.textContent = 'No movies found matching your criteria. Try different inputs or clear the streaming service filter.';
+        return;
+    }
+    
+    // Display movies in carousel
+    carouselContainer.style.display = 'block';
+    noResults.style.display = 'none';
+    track.innerHTML = '';
+    
+    filteredMovies.forEach((m, index) => {
+        const div = document.createElement('div');
+        div.className = 'movie';
+        div.innerHTML = `
+            <div class="movie-poster-container">
+                <div class="movie-rank">${index + 1}</div>
+                ${m.poster ? 
+                    `<img src="${m.poster}" alt="${m.title}">` : 
+                    `<div class="movie-no-poster">${m.title}</div>`
+                }
+            </div>
+            <div class="movie-content">
+                <div class="movie-title">${m.title}</div>
+                <div class="movie-score">Score: ${m.score.toFixed(3)}</div>
+                <div class="movie-genres"><strong>Genres:</strong> ${m.genres.join(', ') || 'N/A'}</div>
+                <div class="movie-providers"><strong>Streaming:</strong> ${m.providers && m.providers.length > 0 ? m.providers.join(', ') : 'Not available'}</div>
+                <div class="per-user-scores"><strong>Per-User:</strong><br>${m.per_user_scores.map((s, i) => `User ${i + 1}: ${s.toFixed(2)}`).join('<br>')}</div>
+            </div>
+        `;
+        track.appendChild(div);
+    });
+    
+    updateCarousel();
+}
+
+async function computeCompromise() {
+    if (movieLibrary.length === 0) {
+        alert("Movie library not loaded yet. Please wait...");
+        return;
+    }
+    
+    const noResults = document.getElementById('noResults');
+    const carouselContainer = document.getElementById('carouselContainer');
+    
+    carouselContainer.style.display = 'none';
+    noResults.style.display = 'block';
+    noResults.textContent = '🔄 Computing compromise...';
+    
+    const type = document.getElementById('inputType').value;
+    const inputs = Array.from(document.querySelectorAll('#usersContainer input'))
+        .map(i => i.value.split(','))
+        .filter(arr => arr.some(x => x.trim()));
+    
+    if (inputs.length < 2) {
+        noResults.textContent = 'Please enter preferences for at least 2 users!';
+        return;
+    }
+    
+    const { list, index } = buildGenreIndex(movieLibrary);
+    const userVecs = inputs.map(ui => userVector(ui, type, index));
+    
+    // Calculate scores
+    const scored = movieLibrary.map(m => {
+        const mvec = movieVector(m, index);
+        const sims = userVecs.map(uvec => cosineSim(mvec, uvec));
+        let avg = sims.reduce((a, b) => a + b, 0) / sims.length;
+        
+        // Fairness bonus if movie appeals to all users
+        const minSim = Math.min(...sims);
+        if (minSim > 0.1) avg += 0.05;
+        
+        return { ...m, score: avg, per_user_scores: sims };
+    });
+    
+    scored.sort((a, b) => b.score - a.score);
+    let top = scored.slice(0, 30);
+    
+    // Fetch providers for top movies
+    allProviders.clear();
+    noResults.textContent = '🔄 Fetching streaming services...';
+    
+    for (const m of top) {
+        m.providers = await fetchProviders(m.id);
+    }
+    
+    // Store all movies before filtering
+    allComputedMovies = top;
+    filteredMovies = [...top];
+    
+    // Update provider filter
+    updateProviderFilter();
+    
+    // Display movies
+    filterAndDisplayMovies();
+}
 </script>
+
 </body>
 </html>
