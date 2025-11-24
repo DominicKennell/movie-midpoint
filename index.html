@@ -1110,15 +1110,17 @@ async function computeRoomCompromise() {
     
     // Score movies
     const scored = movieLibrary.map(m => {
-        const mvec = movieVector(m, index);
-        const sims = userVecs.map(uvec => cosineSim(mvec, uvec));
-        let avg = sims.reduce((a, b) => a + b, 0) / sims.length;
-        
-        const minSim = Math.min(...sims);
-        if (minSim > 0.1) avg += 0.05;
-        
-        return { ...m, score: avg, per_user_scores: sims };
-    });
+    const mvec = movieVector(m, index);
+    const sims = userVecs.map(uvec => cosineSim(mvec, uvec));
+    
+    const minSim = Math.min(...sims);  // Lowest score (most unhappy person)
+    const avgSim = sims.reduce((a, b) => a + b, 0) / sims.length;
+    
+    // TRUE COMPROMISE: 70% weight on fairness (min), 30% on overall appeal (avg)
+    const score = (minSim * 0.7) + (avgSim * 0.3);
+    
+    return { ...m, score: score, per_user_scores: sims };
+});
     
     scored.sort((a, b) => b.score - a.score);
     console.log('Top 5 scores:', scored.slice(0, 5).map(m => ({ title: m.title, score: m.score, genres: m.genres })));
