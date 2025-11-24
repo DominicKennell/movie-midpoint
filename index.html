@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Movie Compromise App</title>
+<title>Movie Compromise - Multiplayer Rooms</title>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 * { box-sizing: border-box; }
 
@@ -38,36 +39,166 @@ h1 {
     margin-bottom: 30px;
 }
 
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.8);
+/* Mode Selection */
+.mode-selection {
     display: flex;
-    align-items: center;
+    gap: 20px;
     justify-content: center;
-    z-index: 4000;
-    flex-direction: column;
-    color: white;
+    margin-bottom: 30px;
 }
 
-.spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
+.mode-card {
+    flex: 1;
+    max-width: 300px;
+    padding: 30px;
+    border: 3px solid #e0e0e0;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: white;
+}
+
+.mode-card:hover {
+    border-color: #667eea;
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+}
+
+.mode-card h2 {
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.mode-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+/* Room Section */
+.room-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
     margin-bottom: 20px;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.room-code-display {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+    border: 2px dashed #667eea;
 }
 
+.room-code {
+    font-size: 36px;
+    font-weight: bold;
+    color: #667eea;
+    letter-spacing: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+.share-link {
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+    word-break: break-all;
+}
+
+.copy-button {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.copy-button:hover {
+    background: #5568d3;
+}
+
+/* Participants */
+.participants-section {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.participants-header {
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.participant-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.participant {
+    background: #e8eaf6;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.participant.ready {
+    background: #c8e6c9;
+}
+
+.participant.host {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff9800;
+}
+
+.status-indicator.ready {
+    background: #4caf50;
+}
+
+/* Join Room Form */
+.join-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.join-form input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Courier New', monospace;
+}
+
+.join-form input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* Control Panel */
 .control-panel {
     background: #f8f9fa;
     padding: 20px;
@@ -86,51 +217,18 @@ label {
     color: #555;
 }
 
-input, select, button {
+input[type="text"], select {
+    width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 14px;
 }
 
-input, select {
-    width: 100%;
-}
-
 input:focus, select:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.user-input {
-    background: white;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    border: 1px solid #e0e0e0;
-}
-
-.user-label {
-    font-weight: 600;
-    color: #667eea;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.remove-user {
-    background: #ff4444;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    margin-left: 10px;
-}
-
-.remove-user:hover {
-    background: #cc0000;
 }
 
 button {
@@ -142,6 +240,7 @@ button {
     cursor: pointer;
     font-weight: 600;
     transition: background 0.3s;
+    font-size: 14px;
 }
 
 button:hover {
@@ -153,12 +252,61 @@ button:disabled {
     cursor: not-allowed;
 }
 
+button.secondary {
+    background: #6c757d;
+}
+
+button.secondary:hover {
+    background: #5a6268;
+}
+
+button.success {
+    background: #28a745;
+}
+
+button.success:hover {
+    background: #218838;
+}
+
 .button-group {
     display: flex;
     gap: 10px;
     margin-top: 15px;
 }
 
+/* Status Messages */
+.status-message {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.status-message.info {
+    background: #e3f2fd;
+    color: #1565c0;
+    border-left: 4px solid #2196f3;
+}
+
+.status-message.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #4caf50;
+}
+
+.status-message.warning {
+    background: #fff3e0;
+    color: #e65100;
+    border-left: 4px solid #ff9800;
+}
+
+.status-message.error {
+    background: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #f44336;
+}
+
+/* Carousel (same as before) */
 .carousel-container {
     position: relative;
     margin-top: 30px;
@@ -352,63 +500,33 @@ button:disabled {
     font-size: 18px;
 }
 
-.info-banner {
-    background: #e3f2fd;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    border-left: 4px solid #2196f3;
-    color: #1565c0;
-    font-size: 14px;
+.hidden {
+    display: none;
 }
 
-.provider-filter {
-    margin-top: 15px;
+/* Loading Animation */
+.loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
 }
 
-.provider-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.provider-tag {
-    background: #e8eaf6;
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 12px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.2s;
-}
-
-.provider-tag:hover {
-    background: #c5cae9;
-}
-
-.provider-tag.selected {
-    background: #667eea;
-    color: white;
-    border-color: #5568d3;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {
-    .container {
-        padding: 20px 15px;
+    .mode-selection {
+        flex-direction: column;
     }
     
-    h1 {
-        font-size: 1.8em;
-    }
-    
-    .movie {
-        min-width: 220px;
-        max-width: 220px;
-    }
-    
-    .movie-poster-container {
-        height: 330px;
+    .mode-card {
+        max-width: 100%;
     }
     
     .carousel-header {
@@ -422,186 +540,148 @@ button:disabled {
         justify-content: space-between;
     }
     
-    .carousel-title {
-        font-size: 18px;
-    }
-    
-    .movie-counter {
-        font-size: 12px;
-    }
-    
-    .button-group {
-        flex-direction: column;
-    }
-    
-    button {
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
     .movie {
-        min-width: 180px;
-        max-width: 180px;
-    }
-    
-    .movie-poster-container {
-        height: 270px;
-    }
-    
-    .carousel-btn {
-        width: 35px;
-        height: 35px;
-        font-size: 18px;
+        min-width: 220px;
+        max-width: 220px;
     }
 }
 </style>
 </head>
 <body>
 
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div id="loadingText">Loading movie library...</div>
-</div>
-
 <div class="container">
-    <h1>🎬 Movie Compromise App</h1>
-    <p class="subtitle">Find the perfect movie everyone will enjoy • Powered by TMDb</p>
+    <h1>🎬 Movie Compromise</h1>
+    <p class="subtitle">Multiplayer Rooms • Find movies everyone loves • Powered by TMDb</p>
 
-    <div class="info-banner" id="libraryStatus">
-        Loading movie library... This may take a moment.
-    </div>
-
-    <div class="control-panel">
-        <div class="form-group">
-            <label for="inputType">What are you inputting?</label>
-            <select id="inputType">
-                <option value="genre">Genres (e.g., Action, Comedy, Drama)</option>
-                <option value="movie">Movie Titles (e.g., Inception, The Matrix)</option>
-            </select>
+    <!-- Mode Selection Screen -->
+    <div id="modeSelection" class="mode-selection">
+        <div class="mode-card" onclick="createRoom()">
+            <div class="mode-icon">🏠</div>
+            <h2>Host a Room</h2>
+            <p>Create a room and invite friends to join</p>
         </div>
-
-        <div id="usersContainer">
-            <div class="user-input">
-                <label class="user-label">👤 User 1</label>
-                <input type="text" placeholder="Enter comma-separated genres or movies">
-            </div>
-            <div class="user-input">
-                <label class="user-label">👤 User 2</label>
-                <input type="text" placeholder="Enter comma-separated genres or movies">
-            </div>
-        </div>
-
-        <div class="button-group">
-            <button onclick="addUser()">➕ Add Another User</button>
-            <button onclick="computeCompromise()" id="computeBtn" disabled>🎯 Find Compromise Movies</button>
-        </div>
-
-        <div class="provider-filter">
-            <label>Filter by Streaming Service (optional):</label>
-            <div class="provider-tags" id="providerTags">
-                <!-- Will be populated dynamically -->
-            </div>
+        <div class="mode-card" onclick="showJoinForm()">
+            <div class="mode-icon">🚪</div>
+            <h2>Join a Room</h2>
+            <p>Enter a room code from your friend</p>
         </div>
     </div>
 
-    <div class="carousel-container" id="carouselContainer" style="display: none;">
-        <div class="carousel-header">
-            <div class="carousel-title">🎬 Your Compromise Movies</div>
-            <div class="carousel-info">
-                <div class="movie-counter" id="movieCounter"></div>
-                <div class="carousel-controls">
-                    <button class="carousel-btn" id="prevBtn" onclick="scrollCarousel(-1)">‹</button>
-                    <button class="carousel-btn" id="nextBtn" onclick="scrollCarousel(1)">›</button>
+    <!-- Join Room Screen -->
+    <div id="joinSection" class="hidden">
+        <div class="join-form">
+            <h2>Join a Room</h2>
+            <input type="text" id="joinRoomCode" placeholder="Enter Room Code (e.g., ABC123)" maxlength="6">
+            <input type="text" id="guestName" placeholder="Your Name" maxlength="20">
+            <div class="button-group">
+                <button onclick="joinRoom()">Join Room</button>
+                <button class="secondary" onclick="backToModeSelection()">Back</button>
+            </div>
+        </div>
+        <div id="joinStatus"></div>
+    </div>
+
+    <!-- Room Screen -->
+    <div id="roomSection" class="hidden">
+        <!-- Room Info -->
+        <div class="room-section">
+            <div class="room-code-display">
+                <div>Share this code with your friends:</div>
+                <div class="room-code" id="displayRoomCode"></div>
+                <button class="copy-button" onclick="copyRoomCode()">📋 Copy Code</button>
+            </div>
+            
+            <!-- Participants -->
+            <div class="participants-section">
+                <div class="participants-header">👥 Participants (<span id="participantCount">1</span>)</div>
+                <div class="participant-list" id="participantList"></div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="roomStatus"></div>
+
+        <!-- Preferences Input -->
+        <div class="control-panel">
+            <div class="form-group">
+                <label for="inputTypeRoom">What are you inputting?</label>
+                <select id="inputTypeRoom">
+                    <option value="genre">Genres (e.g., Action, Comedy, Drama)</option>
+                    <option value="movie">Movie Titles (e.g., Inception, The Matrix)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="userPreferences">Your Preferences:</label>
+                <input type="text" id="userPreferences" placeholder="e.g., Action, Comedy, Thriller (case-insensitive)">
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                    📝 Common genres: Action, Adventure, Animation, Comedy, Crime, Documentary, Drama, Family, Fantasy, History, Horror, Music, Mystery, Romance, Science Fiction, Thriller, War, Western
+                </small>
+            </div>
+
+            <div class="button-group">
+                <button id="readyBtn" onclick="toggleReady()" class="success">✓ I'm Ready</button>
+                <button onclick="leaveRoom()" class="secondary">Leave Room</button>
+                <button id="computeRoomBtn" onclick="computeRoomCompromise()" disabled style="display: none;">🎯 Find Compromise</button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="carousel-container" id="carouselContainer" style="display: none;">
+            <div class="carousel-header">
+                <div class="carousel-title">🎬 Your Compromise Movies</div>
+                <div class="carousel-info">
+                    <div class="movie-counter" id="movieCounter"></div>
+                    <div class="carousel-controls">
+                        <button class="carousel-btn" id="prevBtn" onclick="scrollCarousel(-1)">‹</button>
+                        <button class="carousel-btn" id="nextBtn" onclick="scrollCarousel(1)">›</button>
+                    </div>
                 </div>
             </div>
+            <div class="carousel-wrapper">
+                <div class="carousel-track" id="carouselTrack"></div>
+            </div>
         </div>
-        <div class="carousel-wrapper">
-            <div class="carousel-track" id="carouselTrack"></div>
-        </div>
-    </div>
 
-    <div class="no-results" id="noResults" style="display: none;"></div>
+        <div class="no-results" id="noResults" style="display: none;"></div>
+    </div>
 </div>
 
 <script>
+// TMDb Configuration
 const TMDB_KEY = "939585bf35fd2c9bc972468f88bf1d01";
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w185';
 
+// Movie Library
 let movieLibrary = [];
-let userCount = 2;
-let selectedProviders = new Set();
-let allProviders = new Set();
+
+// P2P Configuration
+let peer = null;
+let connections = {};
+let isHost = false;
+let roomCode = '';
+let myName = '';
+let myPeerId = '';
+
+// Room State
+let participants = {};
+let roomReady = false;
+
+// Carousel State
 let currentCarouselIndex = 0;
 let filteredMovies = [];
-let allComputedMovies = []; // Store original computed movies
+let allComputedMovies = [];
 let moviesPerView = 4;
 
-// Calculate movies per view based on screen width
-function updateMoviesPerView() {
-    const width = window.innerWidth;
-    if (width < 600) moviesPerView = 1;
-    else if (width < 900) moviesPerView = 2;
-    else if (width < 1200) moviesPerView = 3;
-    else moviesPerView = 4;
-}
+// ==================== INITIALIZATION ====================
 
-window.addEventListener('resize', () => {
-    updateMoviesPerView();
-    updateCarousel();
-});
-
-updateMoviesPerView();
-
-// Touch support for mobile swiping
-let touchStartX = 0;
-let touchEndX = 0;
-
-document.addEventListener('DOMContentLoaded', () => {
-    const wrapper = document.getElementById('carouselContainer');
-    if (wrapper) {
-        wrapper.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-        }, false);
-
-        wrapper.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        }, false);
-    }
-});
-
-function handleSwipe() {
-    const swipeThreshold = 50;
-    if (touchEndX < touchStartX - swipeThreshold) {
-        // Swipe left - next
-        scrollCarousel(1);
-    }
-    if (touchEndX > touchStartX + swipeThreshold) {
-        // Swipe right - previous
-        scrollCarousel(-1);
-    }
-}
-
-// Keyboard navigation
-document.addEventListener('keydown', (e) => {
-    if (filteredMovies.length > 0) {
-        if (e.key === 'ArrowLeft') {
-            scrollCarousel(-1);
-        } else if (e.key === 'ArrowRight') {
-            scrollCarousel(1);
-        }
-    }
-});
-
-// -------------------- Fetch TMDb movies (optimized) --------------------
-async function fetchMovieLibrary(numMovies = 4000, minVotes = 500) {
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const loadingText = document.getElementById('loadingText');
+// Load movie library on startup
+async function loadMovieLibrary() {
+    if (movieLibrary.length > 0) return;
     
     try {
-        // First, fetch the genre list
+        // Fetch genre list
         const genreRes = await fetch(`${TMDB_BASE}/genre/movie/list?api_key=${TMDB_KEY}&language=en-US`);
         const genreData = await genreRes.json();
         const genreMap = {};
@@ -609,11 +689,10 @@ async function fetchMovieLibrary(numMovies = 4000, minVotes = 500) {
         
         let movies = [];
         let page = 1;
-        const maxPages = 50;
+        const numMovies = 5000;
+        const minVotes = 500;
         
-        while (movies.length < numMovies && page <= maxPages) {
-            loadingText.textContent = `Loading movies... ${movies.length} / ${numMovies}`;
-            
+        while (movies.length < numMovies && page <= 50) {
             const url = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&page=${page}&vote_count.gte=${minVotes}&include_adult=false`;
             const res = await fetch(url);
             const data = await res.json();
@@ -628,28 +707,485 @@ async function fetchMovieLibrary(numMovies = 4000, minVotes = 500) {
                 if (movies.length >= numMovies) break;
             }
             page++;
-            
-            // Small delay to avoid rate limiting
             await new Promise(resolve => setTimeout(resolve, 100));
         }
         
         movieLibrary = movies;
-        
-        loadingOverlay.style.display = 'none';
-        document.getElementById('libraryStatus').innerHTML = `✅ <strong>${movieLibrary.length} movies loaded!</strong> Ready to find your perfect compromise.`;
-        document.getElementById('computeBtn').disabled = false;
-        
+        console.log(`✅ Loaded ${movieLibrary.length} movies`);
     } catch (error) {
-        loadingOverlay.style.display = 'none';
-        document.getElementById('libraryStatus').innerHTML = `❌ Error loading movies. Please refresh the page.`;
-        console.error('Error loading movie library:', error);
+        console.error('Error loading movies:', error);
     }
 }
 
-// Start loading immediately
-fetchMovieLibrary();
+loadMovieLibrary();
 
-// -------------------- Compromise Algorithm --------------------
+// ==================== MODE SELECTION ====================
+
+function showModeSelection() {
+    document.getElementById('modeSelection').classList.remove('hidden');
+    document.getElementById('joinSection').classList.add('hidden');
+    document.getElementById('roomSection').classList.add('hidden');
+}
+
+function showJoinForm() {
+    document.getElementById('modeSelection').classList.add('hidden');
+    document.getElementById('joinSection').classList.remove('hidden');
+}
+
+function backToModeSelection() {
+    if (peer) {
+        peer.destroy();
+        peer = null;
+    }
+    connections = {};
+    participants = {};
+    showModeSelection();
+}
+
+// ==================== ROOM CREATION (HOST) ====================
+
+function generateRoomCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+}
+
+function createRoom() {
+    roomCode = generateRoomCode();
+    isHost = true;
+    myName = 'Host';
+    
+    // Initialize PeerJS
+    peer = new Peer(roomCode, {
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+            ]
+        }
+    });
+    
+    peer.on('open', (id) => {
+        myPeerId = id;
+        console.log('Host peer ID:', id);
+        
+        // Add host to participants
+        participants[myPeerId] = {
+            name: myName,
+            isHost: true,
+            isReady: false,
+            preferences: ''
+        };
+        
+        showRoomScreen();
+        showStatus('Room created! Share the code with your friends.', 'success');
+    });
+    
+    // Handle incoming connections
+    peer.on('connection', (conn) => {
+        setupConnection(conn);
+    });
+    
+    peer.on('error', (err) => {
+        console.error('Peer error:', err);
+        showStatus('Connection error. Please try again.', 'error');
+    });
+}
+
+// ==================== ROOM JOINING (GUEST) ====================
+
+function joinRoom() {
+    const code = document.getElementById('joinRoomCode').value.toUpperCase().trim();
+    const name = document.getElementById('guestName').value.trim();
+    
+    if (!code || code.length !== 6) {
+        showJoinStatus('Please enter a valid 6-character room code.', 'error');
+        return;
+    }
+    
+    if (!name) {
+        showJoinStatus('Please enter your name.', 'error');
+        return;
+    }
+    
+    roomCode = code;
+    myName = name;
+    isHost = false;
+    
+    showJoinStatus('Connecting to room...', 'info');
+    
+    // Initialize PeerJS with random ID
+    peer = new Peer({
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+            ]
+        }
+    });
+    
+    peer.on('open', (id) => {
+        myPeerId = id;
+        console.log('Guest peer ID:', id);
+        
+        // Connect to host
+        const conn = peer.connect(roomCode);
+        setupConnection(conn);
+        
+        conn.on('open', () => {
+            // Send join request
+            conn.send({
+                type: 'join',
+                peerId: myPeerId,
+                name: myName
+            });
+        });
+    });
+    
+    peer.on('error', (err) => {
+        console.error('Peer error:', err);
+        showJoinStatus('Could not connect to room. Please check the code and try again.', 'error');
+    });
+}
+
+// ==================== CONNECTION SETUP ====================
+
+function setupConnection(conn) {
+    const peerId = conn.peer;
+    connections[peerId] = conn;
+    
+    conn.on('data', (data) => {
+        handleMessage(data, peerId);
+    });
+    
+    conn.on('close', () => {
+        console.log('Connection closed:', peerId);
+        delete connections[peerId];
+        delete participants[peerId];
+        updateParticipantsList();
+    });
+    
+    conn.on('error', (err) => {
+        console.error('Connection error:', err);
+    });
+}
+
+// ==================== MESSAGE HANDLING ====================
+
+function handleMessage(data, fromPeerId) {
+    console.log('Received message:', data.type, 'from:', fromPeerId);
+    
+    switch (data.type) {
+        case 'join':
+            if (isHost) {
+                // Add new participant
+                participants[data.peerId] = {
+                    name: data.name,
+                    isHost: false,
+                    isReady: false,
+                    preferences: ''
+                };
+                
+                // Send current room state to new participant
+                connections[data.peerId].send({
+                    type: 'room_state',
+                    participants: participants,
+                    roomCode: roomCode
+                });
+                
+                // Broadcast updated participants to all
+                broadcastToAll({
+                    type: 'participants_update',
+                    participants: participants
+                });
+                
+                updateParticipantsList();
+                showStatus(`${data.name} joined the room!`, 'success');
+            }
+            break;
+            
+        case 'room_state':
+            // Guest receives initial room state
+            participants = data.participants;
+            roomCode = data.roomCode;
+            
+            // Add self to participants
+            participants[myPeerId] = {
+                name: myName,
+                isHost: false,
+                isReady: false,
+                preferences: ''
+            };
+            
+            showRoomScreen();
+            showStatus('Successfully joined the room!', 'success');
+            
+            // Tell host we're fully connected
+            connections[fromPeerId].send({
+                type: 'guest_ready',
+                peerId: myPeerId
+            });
+            break;
+            
+        case 'participants_update':
+            participants = data.participants;
+            updateParticipantsList();
+            break;
+            
+        case 'ready_status':
+            if (participants[data.peerId]) {
+                participants[data.peerId].isReady = data.isReady;
+                participants[data.peerId].preferences = data.preferences;
+                updateParticipantsList();
+                checkAllReady();
+            }
+            break;
+            
+        case 'compute_request':
+            if (isHost) {
+                computeRoomCompromise();
+            }
+            break;
+            
+        case 'results':
+            displayResults(data.results);
+            break;
+    }
+}
+
+// ==================== BROADCASTING ====================
+
+function broadcastToAll(data) {
+    Object.values(connections).forEach(conn => {
+        if (conn.open) {
+            conn.send(data);
+        }
+    });
+}
+
+// ==================== UI UPDATES ====================
+
+function showRoomScreen() {
+    document.getElementById('modeSelection').classList.add('hidden');
+    document.getElementById('joinSection').classList.add('hidden');
+    document.getElementById('roomSection').classList.remove('hidden');
+    document.getElementById('displayRoomCode').textContent = roomCode;
+    
+    if (isHost) {
+        document.getElementById('computeRoomBtn').style.display = 'block';
+    }
+    
+    updateParticipantsList();
+}
+
+function updateParticipantsList() {
+    const list = document.getElementById('participantList');
+    const count = document.getElementById('participantCount');
+    
+    list.innerHTML = '';
+    count.textContent = Object.keys(participants).length;
+    
+    Object.entries(participants).forEach(([peerId, participant]) => {
+        const div = document.createElement('div');
+        div.className = 'participant';
+        if (participant.isReady) div.classList.add('ready');
+        if (participant.isHost) div.classList.add('host');
+        
+        const statusClass = participant.isReady ? 'ready' : '';
+        div.innerHTML = `
+            <span class="status-indicator ${statusClass}"></span>
+            ${participant.name} ${participant.isHost ? '👑' : ''}
+        `;
+        list.appendChild(div);
+    });
+}
+
+function showStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('roomStatus');
+    statusDiv.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+    setTimeout(() => {
+        statusDiv.innerHTML = '';
+    }, 5000);
+}
+
+function showJoinStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('joinStatus');
+    statusDiv.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+}
+
+function copyRoomCode() {
+    navigator.clipboard.writeText(roomCode);
+    showStatus('Room code copied to clipboard!', 'success');
+}
+
+// ==================== READY STATUS ====================
+
+function toggleReady() {
+    const prefs = document.getElementById('userPreferences').value.trim();
+    
+    if (!prefs) {
+        showStatus('Please enter your preferences first!', 'warning');
+        return;
+    }
+    
+    const currentStatus = participants[myPeerId].isReady;
+    const newStatus = !currentStatus;
+    
+    participants[myPeerId].isReady = newStatus;
+    participants[myPeerId].preferences = prefs;
+    
+    const btn = document.getElementById('readyBtn');
+    if (newStatus) {
+        btn.textContent = '✓ Ready!';
+        btn.classList.add('success');
+    } else {
+        btn.textContent = '○ Mark Ready';
+        btn.classList.remove('success');
+    }
+    
+    // Broadcast ready status
+    broadcastToAll({
+        type: 'ready_status',
+        peerId: myPeerId,
+        isReady: newStatus,
+        preferences: prefs
+    });
+    
+    updateParticipantsList();
+    checkAllReady();
+}
+
+function checkAllReady() {
+    const allReady = Object.values(participants).every(p => p.isReady);
+    
+    if (isHost) {
+        const computeBtn = document.getElementById('computeRoomBtn');
+        computeBtn.disabled = !allReady;
+        
+        if (allReady && Object.keys(participants).length >= 2) {
+            showStatus('Everyone is ready! Click "Find Compromise" to see results.', 'success');
+        }
+    }
+}
+
+// ==================== COMPROMISE ALGORITHM ====================
+
+async function computeRoomCompromise() {
+    if (movieLibrary.length === 0) {
+        showStatus('Movie library still loading... please wait.', 'warning');
+        return;
+    }
+    
+    console.log('=== Starting Compromise Calculation ===');
+    console.log('Movie library size:', movieLibrary.length);
+    console.log('Participants:', participants);
+    
+    const noResults = document.getElementById('noResults');
+    noResults.style.display = 'block';
+    noResults.textContent = '🔄 Computing the perfect compromise...';
+    
+    const type = document.getElementById('inputTypeRoom').value;
+    const userPreferences = Object.values(participants)
+        .filter(p => p.preferences)
+        .map(p => p.preferences.split(','));
+    
+    console.log('User preferences:', userPreferences);
+    console.log('Input type:', type);
+    
+    if (userPreferences.length < 2) {
+        noResults.textContent = 'Need at least 2 people with preferences!';
+        return;
+    }
+    
+    // Build genre index
+    const { list, index } = buildGenreIndex(movieLibrary);
+    console.log('Genre index built. Total genres:', Object.keys(index).length);
+    console.log('Available genres:', list);
+    
+    const userVecs = userPreferences.map(prefs => userVector(prefs, type, index));
+    console.log('User vectors created:', userVecs);
+    
+    // Score movies
+    const scored = movieLibrary.map(m => {
+        const mvec = movieVector(m, index);
+        const sims = userVecs.map(uvec => cosineSim(mvec, uvec));
+        let avg = sims.reduce((a, b) => a + b, 0) / sims.length;
+        
+        const minSim = Math.min(...sims);
+        if (minSim > 0.1) avg += 0.05;
+        
+        return { ...m, score: avg, per_user_scores: sims };
+    });
+    
+    scored.sort((a, b) => b.score - a.score);
+    console.log('Top 5 scores:', scored.slice(0, 5).map(m => ({ title: m.title, score: m.score, genres: m.genres })));
+    
+    const top = scored.slice(0, 30);
+    
+    // Fetch providers
+    for (const m of top) {
+        m.providers = await fetchProviders(m.id);
+    }
+    
+    // Store results
+    allComputedMovies = top;
+    filteredMovies = [...top];
+    
+    // Display results locally
+    displayResults(top);
+    
+    // Broadcast results to all guests
+    if (isHost) {
+        broadcastToAll({
+            type: 'results',
+            results: top
+        });
+    }
+}
+
+function displayResults(results) {
+    allComputedMovies = results;
+    filteredMovies = [...results];
+    currentCarouselIndex = 0;
+    
+    const carouselContainer = document.getElementById('carouselContainer');
+    const noResults = document.getElementById('noResults');
+    const track = document.getElementById('carouselTrack');
+    
+    carouselContainer.style.display = 'block';
+    noResults.style.display = 'none';
+    track.innerHTML = '';
+    
+    filteredMovies.forEach((m, index) => {
+        const div = document.createElement('div');
+        div.className = 'movie';
+        div.innerHTML = `
+            <div class="movie-poster-container">
+                <div class="movie-rank">${index + 1}</div>
+                ${m.poster ? 
+                    `<img src="${m.poster}" alt="${m.title}">` : 
+                    `<div class="movie-no-poster">${m.title}</div>`
+                }
+            </div>
+            <div class="movie-content">
+                <div class="movie-title">${m.title}</div>
+                <div class="movie-score">Score: ${m.score.toFixed(3)}</div>
+                <div class="movie-genres"><strong>Genres:</strong> ${m.genres.join(', ') || 'N/A'}</div>
+                <div class="movie-providers"><strong>Streaming:</strong> ${m.providers && m.providers.length > 0 ? m.providers.join(', ') : 'Not available'}</div>
+                <div class="per-user-scores"><strong>Per-User:</strong><br>${m.per_user_scores.map((s, i) => `User ${i + 1}: ${s.toFixed(2)}`).join('<br>')}</div>
+            </div>
+        `;
+        track.appendChild(div);
+    });
+    
+    updateCarousel();
+}
+
+// ==================== ALGORITHM HELPERS ====================
+
 function cosineSim(a, b) {
     let dot = 0, normA = 0, normB = 0;
     for (let i = 0; i < a.length; i++) {
@@ -682,25 +1218,40 @@ function userVector(userInput, type, index) {
     const vec = Array(Object.keys(index).length).fill(0);
     const tokens = userInput.map(x => x.trim()).filter(x => x);
     
+    console.log('User input tokens:', tokens);
+    console.log('Input type:', type);
+    console.log('Available genres:', Object.keys(index));
+    
     if (type === 'genre') {
         tokens.forEach(t => {
-            if (index[t] !== undefined) {
-                vec[index[t]] = 1;
-            } else {
-                // Fuzzy match for genre
+            // Try exact match first (case-insensitive)
+            let matched = false;
+            Object.keys(index).forEach(g => {
+                if (g.toLowerCase() === t.toLowerCase()) {
+                    vec[index[g]] = 1;
+                    matched = true;
+                    console.log(`✓ Matched "${t}" to "${g}"`);
+                }
+            });
+            
+            // If no exact match, try fuzzy matching
+            if (!matched) {
                 const closest = Object.keys(index).reduce((best, g) => {
                     const sim = stringSim(t, g);
                     return sim > best.sim ? { sim: sim, genre: g } : best;
                 }, { sim: 0, genre: null });
-                if (closest.sim > 0.6) vec[index[closest.genre]] = 1;
+                if (closest.sim > 0.5) {
+                    vec[index[closest.genre]] = 1;
+                    console.log(`≈ Fuzzy matched "${t}" to "${closest.genre}" (${closest.sim.toFixed(2)})`);
+                } else {
+                    console.log(`✗ No match for "${t}"`);
+                }
             }
         });
     } else {
-        // Movie input
         tokens.forEach(t => {
             let found = movieLibrary.find(m => m.title.toLowerCase() === t.toLowerCase());
             if (!found) {
-                // Fuzzy match
                 let bestSim = 0, best = null;
                 movieLibrary.forEach(m => {
                     const sim = stringSim(m.title, t);
@@ -738,15 +1289,12 @@ function stringSim(a, b) {
     return matches / Math.max(a.length, b.length);
 }
 
-// -------------------- Fetch providers --------------------
 async function fetchProviders(movieId) {
     try {
         const res = await fetch(`${TMDB_BASE}/movie/${movieId}/watch/providers?api_key=${TMDB_KEY}`);
         const data = await res.json();
         if (data.results && data.results.US && data.results.US.flatrate) {
-            const providers = data.results.US.flatrate.map(p => p.provider_name);
-            providers.forEach(p => allProviders.add(p));
-            return providers;
+            return data.results.US.flatrate.map(p => p.provider_name);
         }
         return [];
     } catch (error) {
@@ -754,201 +1302,64 @@ async function fetchProviders(movieId) {
     }
 }
 
-// -------------------- UI Handlers --------------------
-function addUser() {
-    userCount++;
-    const div = document.createElement('div');
-    div.className = 'user-input';
-    div.innerHTML = `
-        <label class="user-label">👤 User ${userCount}</label>
-        <input type="text" placeholder="Enter comma-separated genres or movies">
-        <button class="remove-user" onclick="removeUser(this)">Remove</button>
-    `;
-    document.getElementById('usersContainer').appendChild(div);
+// ==================== CAROUSEL CONTROLS ====================
+
+function updateMoviesPerView() {
+    const width = window.innerWidth;
+    if (width < 600) moviesPerView = 1;
+    else if (width < 900) moviesPerView = 2;
+    else if (width < 1200) moviesPerView = 3;
+    else moviesPerView = 4;
 }
 
-function removeUser(btn) {
-    if (document.querySelectorAll('#usersContainer .user-input').length > 2) {
-        btn.parentElement.remove();
-        // Renumber users
-        const users = document.querySelectorAll('#usersContainer .user-label');
-        users.forEach((label, index) => {
-            label.textContent = `👤 User ${index + 1}`;
-        });
-        userCount = users.length;
-    } else {
-        alert('You need at least 2 users to find a compromise!');
-    }
-}
+window.addEventListener('resize', () => {
+    updateMoviesPerView();
+    updateCarousel();
+});
 
-function updateProviderFilter() {
-    const container = document.getElementById('providerTags');
-    container.innerHTML = '';
-    
-    const sortedProviders = Array.from(allProviders).sort();
-    sortedProviders.forEach(provider => {
-        const tag = document.createElement('div');
-        tag.className = 'provider-tag';
-        if (selectedProviders.has(provider)) {
-            tag.classList.add('selected');
-        }
-        tag.textContent = provider;
-        tag.onclick = () => {
-            if (selectedProviders.has(provider)) {
-                selectedProviders.delete(provider);
-                tag.classList.remove('selected');
-            } else {
-                selectedProviders.add(provider);
-                tag.classList.add('selected');
-            }
-            // Re-filter and display movies when provider selection changes
-            filterAndDisplayMovies();
-        };
-        container.appendChild(tag);
-    });
-}
+updateMoviesPerView();
 
 function scrollCarousel(direction) {
     currentCarouselIndex += direction;
-    
-    // Ensure we don't go out of bounds
     const maxIndex = Math.max(0, filteredMovies.length - moviesPerView);
     currentCarouselIndex = Math.max(0, Math.min(currentCarouselIndex, maxIndex));
-    
     updateCarousel();
 }
 
 function updateCarousel() {
     const track = document.getElementById('carouselTrack');
-    const offset = currentCarouselIndex * (300); // 280px width + 20px gap
+    const offset = currentCarouselIndex * 300;
     track.style.transform = `translateX(-${offset}px)`;
     
-    // Update button states
     document.getElementById('prevBtn').disabled = currentCarouselIndex === 0;
     document.getElementById('nextBtn').disabled = currentCarouselIndex >= filteredMovies.length - moviesPerView;
     
-    // Update counter
     const counter = document.getElementById('movieCounter');
     const startNum = currentCarouselIndex + 1;
     const endNum = Math.min(currentCarouselIndex + moviesPerView, filteredMovies.length);
     counter.textContent = `Showing ${startNum}-${endNum} of ${filteredMovies.length}`;
 }
 
-function filterAndDisplayMovies() {
-    const carouselContainer = document.getElementById('carouselContainer');
-    const noResults = document.getElementById('noResults');
-    const track = document.getElementById('carouselTrack');
-    
-    // Start with all computed movies
-    filteredMovies = [...allComputedMovies];
-    
-    // Filter movies by selected providers if any are selected
-    if (selectedProviders.size > 0) {
-        filteredMovies = filteredMovies.filter(m => 
-            m.providers && m.providers.some(p => selectedProviders.has(p))
-        );
+// ==================== LEAVE ROOM ====================
+
+function leaveRoom() {
+    if (confirm('Are you sure you want to leave the room?')) {
+        if (peer) {
+            peer.destroy();
+        }
+        connections = {};
+        participants = {};
+        backToModeSelection();
     }
-    
-    // Reset carousel position
-    currentCarouselIndex = 0;
-    
-    if (filteredMovies.length === 0) {
-        carouselContainer.style.display = 'none';
-        noResults.style.display = 'block';
-        noResults.textContent = 'No movies found matching your criteria. Try different inputs or clear the streaming service filter.';
-        return;
-    }
-    
-    // Display movies in carousel
-    carouselContainer.style.display = 'block';
-    noResults.style.display = 'none';
-    track.innerHTML = '';
-    
-    filteredMovies.forEach((m, index) => {
-        const div = document.createElement('div');
-        div.className = 'movie';
-        div.innerHTML = `
-            <div class="movie-poster-container">
-                <div class="movie-rank">${index + 1}</div>
-                ${m.poster ? 
-                    `<img src="${m.poster}" alt="${m.title}">` : 
-                    `<div class="movie-no-poster">${m.title}</div>`
-                }
-            </div>
-            <div class="movie-content">
-                <div class="movie-title">${m.title}</div>
-                <div class="movie-score">Score: ${m.score.toFixed(3)}</div>
-                <div class="movie-genres"><strong>Genres:</strong> ${m.genres.join(', ') || 'N/A'}</div>
-                <div class="movie-providers"><strong>Streaming:</strong> ${m.providers && m.providers.length > 0 ? m.providers.join(', ') : 'Not available'}</div>
-                <div class="per-user-scores"><strong>Per-User:</strong><br>${m.per_user_scores.map((s, i) => `User ${i + 1}: ${s.toFixed(2)}`).join('<br>')}</div>
-            </div>
-        `;
-        track.appendChild(div);
-    });
-    
-    updateCarousel();
 }
 
-async function computeCompromise() {
-    if (movieLibrary.length === 0) {
-        alert("Movie library not loaded yet. Please wait...");
-        return;
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    if (filteredMovies.length > 0) {
+        if (e.key === 'ArrowLeft') scrollCarousel(-1);
+        else if (e.key === 'ArrowRight') scrollCarousel(1);
     }
-    
-    const noResults = document.getElementById('noResults');
-    const carouselContainer = document.getElementById('carouselContainer');
-    
-    carouselContainer.style.display = 'none';
-    noResults.style.display = 'block';
-    noResults.textContent = '🔄 Computing compromise...';
-    
-    const type = document.getElementById('inputType').value;
-    const inputs = Array.from(document.querySelectorAll('#usersContainer input'))
-        .map(i => i.value.split(','))
-        .filter(arr => arr.some(x => x.trim()));
-    
-    if (inputs.length < 2) {
-        noResults.textContent = 'Please enter preferences for at least 2 users!';
-        return;
-    }
-    
-    const { list, index } = buildGenreIndex(movieLibrary);
-    const userVecs = inputs.map(ui => userVector(ui, type, index));
-    
-    // Calculate scores
-    const scored = movieLibrary.map(m => {
-        const mvec = movieVector(m, index);
-        const sims = userVecs.map(uvec => cosineSim(mvec, uvec));
-        let avg = sims.reduce((a, b) => a + b, 0) / sims.length;
-        
-        // Fairness bonus if movie appeals to all users
-        const minSim = Math.min(...sims);
-        if (minSim > 0.1) avg += 0.05;
-        
-        return { ...m, score: avg, per_user_scores: sims };
-    });
-    
-    scored.sort((a, b) => b.score - a.score);
-    let top = scored.slice(0, 30);
-    
-    // Fetch providers for top movies
-    allProviders.clear();
-    noResults.textContent = '🔄 Fetching streaming services...';
-    
-    for (const m of top) {
-        m.providers = await fetchProviders(m.id);
-    }
-    
-    // Store all movies before filtering
-    allComputedMovies = top;
-    filteredMovies = [...top];
-    
-    // Update provider filter
-    updateProviderFilter();
-    
-    // Display movies
-    filterAndDisplayMovies();
-}
+});
 </script>
 
 </body>
